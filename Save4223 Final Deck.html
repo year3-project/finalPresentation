@@ -1050,17 +1050,17 @@
     <div class="tag" style="margin-bottom:24px;">Team &amp; Roles</div>
     <h2 class="title" style="font-size:54px;margin-bottom:50px;">Four people, one system</h2>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px;">
-      <div class="member"><image-slot id="team-allen" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">HE Tianlun</div><div class="m-alias mono">Allen · HT</div><div class="m-role">Cabinet design lead</div><p class="m-resp">Overall cabinet design — mechanical structure and hardware integration.</p></div>
-      <div class="member"><image-slot id="team-sunny" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">LI Tsz Yuk</div><div class="m-alias mono">Sunny · LT</div><div class="m-role">Hardware &amp; screw cabinet</div><p class="m-resp">Tool-cabinet hardware circuit design; screw-cabinet overall design and UI.</p></div>
-      <div class="member"><image-slot id="team-humor" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">ZHANG Yue</div><div class="m-alias mono">Humor · ZY</div><div class="m-role">Embedded systems</div><p class="m-resp">Embedded software and firmware; screw-cabinet hardware design.</p></div>
-      <div class="member"><image-slot id="team-vicky" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">ZHANG Yunxin</div><div class="m-alias mono">Vicky · ZY</div><div class="m-role">Web platform</div><p class="m-resp">End-to-end website UI design and deployment.</p></div>
+      <div class="member"><img src="assets/HE Tianlun.jpg" class="m-photo" alt="HE Tianlun"><div class="m-name">HE Tianlun</div><div class="m-alias mono">Allen · HT</div><div class="m-role">Cabinet design lead</div><p class="m-resp">Overall cabinet design — mechanical structure and hardware integration.</p></div>
+      <div class="member"><img src="assets/LI Tsz Yuk.jpg" class="m-photo" alt="LI Tsz Yuk"><div class="m-name">LI Tsz Yuk</div><div class="m-alias mono">Sunny · LT</div><div class="m-role">Hardware &amp; screw cabinet</div><p class="m-resp">Tool-cabinet hardware circuit design; screw-cabinet overall design and UI.</p></div>
+      <div class="member"><img src="assets/ZHANG Yue.jpg" class="m-photo" alt="ZHANG Yue"><div class="m-name">ZHANG Yue</div><div class="m-alias mono">Humor · ZY</div><div class="m-role">Embedded systems</div><p class="m-resp">Embedded software and firmware; screw-cabinet hardware design.</p></div>
+      <div class="member"><img src="assets/ZHANG Yunxin.jpg" class="m-photo" alt="ZHANG Yunxin"><div class="m-name">ZHANG Yunxin</div><div class="m-alias mono">Vicky · ZY</div><div class="m-role">Web platform</div><p class="m-resp">End-to-end website UI design and deployment.</p></div>
     </div>
-    <p class="mono" style="margin-top:32px;font-size:15px;letter-spacing:0.06em;color:var(--mut2);">↳ Drop a photo onto each card to complete the team profiles.</p>
+    <p class="mono" style="margin-top:32px;font-size:15px;letter-spacing:0.06em;color:var(--mut2);">↳ Meet the team behind Save4223.</p>
   </div>
   <style>
     .member{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),rgba(16,22,31,0.3));padding:0 0 30px;position:relative;overflow:hidden;}
     .member::before{content:"";position:absolute;top:0;left:0;width:44px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);z-index:2;}
-    .m-photo{display:block;width:100%;height:260px;margin-bottom:24px;border-bottom:1px solid var(--line);}
+    .m-photo{display:block;width:100%;aspect-ratio:1;margin-bottom:24px;border-bottom:1px solid var(--line);object-fit:cover;object-position:center;}
     .m-name{font-family:var(--font-display);font-size:25px;font-weight:600;line-height:1.1;padding:0 26px;}
     .m-alias{font-size:15.5px;color:var(--mut2);margin-top:5px;letter-spacing:0.06em;padding:0 26px;}
     .m-role{font-family:var(--font-display);font-size:19px;font-weight:500;color:var(--accent);margin:18px 0 12px;padding:0 26px;}
