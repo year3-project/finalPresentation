@@ -9,5 +9,12 @@ uploads/
 # Print version (not needed for live slides)
 Save4223 Final Deck-print.html
 
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
 # macOS
 .DS_Store
