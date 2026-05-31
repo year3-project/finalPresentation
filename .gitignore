@@ -1,0 +1,13 @@
+# Working / source files not needed for deployment
+.claude/
+.mcp.json
+export/
+refs/
+shots/
+uploads/
+
+# Print version (not needed for live slides)
+Save4223 Final Deck-print.html
+
+# macOS
+.DS_Store

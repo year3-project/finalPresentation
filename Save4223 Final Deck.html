@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Save4223 — RFID Smart Inventory Cabinet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  deck-stage:not(:defined){visibility:hidden}
+  :root{
+    --bg:#080B11;
+    --bg2:#0C1119;
+    --panel:#10161F;
+    --ink:#EEF2F7;
+    --mut:#8A95A6;
+    --mut2:#525E70;
+    --line:rgba(255,255,255,0.085);
+    --line2:rgba(255,255,255,0.045);
+    --accent:#27D3EE;
+    --accent-deep:#0E9FB8;
+    --accent-glow:rgba(39,211,238,0.45);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Manrope',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#000;}
+  deck-stage{background:#000;}
+  section{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    overflow:hidden;
+    --pad:96px;
+  }
+  /* shared dot-grid + vignette */
+  .bg-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px);background-size:34px 34px;background-position:center;-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 45%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 90% 90% at 50% 45%,#000 55%,transparent 100%);pointer-events:none;}
+  .bg-grad{position:absolute;inset:0;background:radial-gradient(1200px 700px at 78% 18%,rgba(39,211,238,0.10),transparent 60%);pointer-events:none;}
+
+  /* slide chrome */
+  .chrome-top{position:absolute;top:48px;left:var(--pad);right:var(--pad);display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:14px;letter-spacing:0.22em;text-transform:uppercase;color:var(--mut2);z-index:5;}
+  .chrome-top .wm{color:var(--ink);font-weight:500;letter-spacing:0.28em;}
+  .chrome-top .wm b{color:var(--accent);}
+  .chrome-bot{position:absolute;bottom:46px;left:var(--pad);right:var(--pad);display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:13.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mut2);z-index:5;border-top:1px solid var(--line2);padding-top:16px;}
+  /* datasheet corner ticks */
+  .tick{position:absolute;width:14px;height:14px;border:1px solid var(--line);z-index:5;}
+  .tick.tl{top:34px;left:34px;border-right:0;border-bottom:0;}
+  .tick.tr{top:34px;right:34px;border-left:0;border-bottom:0;}
+  .tick.bl{bottom:34px;left:34px;border-right:0;border-top:0;}
+  .tick.br{bottom:34px;right:34px;border-left:0;border-top:0;}
+
+  .tag{font-family:var(--font-mono);font-size:16px;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);display:inline-flex;align-items:center;gap:12px;}
+  .tag::before{content:"";width:26px;height:1px;background:var(--accent);box-shadow:0 0 8px var(--accent-glow);}
+  .kicker{font-family:var(--font-mono);font-size:16.5px;letter-spacing:0.28em;text-transform:uppercase;color:var(--mut);}
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:1.02;letter-spacing:-0.02em;}
+  .display{font-size:104px;line-height:0.98;font-weight:600;}
+  .title{font-size:72px;line-height:1.0;}
+  .lead{font-size:31px;line-height:1.5;color:var(--mut);font-weight:400;max-width:60ch;}
+  .accent{color:var(--accent);}
+  .mono{font-family:var(--font-mono);}
+  .hair{height:1px;background:var(--line);border:0;}
+  .k{color:var(--accent);font-weight:600;}
+  strong,b{color:var(--ink);}
+
+  /* ===== entrance motion (keyed on active slide) ===== */
+  @keyframes revUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes revFade{from{opacity:0}to{opacity:1}}
+  @keyframes drawln{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .frame>*{opacity:0}
+  section[data-deck-active] .frame>*{animation:revUp .6s cubic-bezier(.2,.75,.2,1) both;}
+  section[data-deck-active] .frame>*:nth-child(1){animation-delay:.04s}
+  section[data-deck-active] .frame>*:nth-child(2){animation-delay:.12s}
+  section[data-deck-active] .frame>*:nth-child(3){animation-delay:.20s}
+  section[data-deck-active] .frame>*:nth-child(4){animation-delay:.28s}
+  section[data-deck-active] .frame>*:nth-child(5){animation-delay:.36s}
+  section[data-deck-active] .frame>*:nth-child(6){animation-delay:.44s}
+  .fade{opacity:0}
+  section[data-deck-active] .fade{animation:revFade .8s ease both;}
+  section[data-deck-active] .fade.up{animation:revUp .7s cubic-bezier(.2,.75,.2,1) both;}
+  section[data-deck-active] .d1{animation-delay:.12s}
+  section[data-deck-active] .d2{animation-delay:.24s}
+  section[data-deck-active] .d3{animation-delay:.36s}
+  @media (prefers-reduced-motion:reduce){.frame>*,.fade{opacity:1!important;animation:none!important}}
+
+  /* ===== hover interactivity ===== */
+  .pain,.mat,.member,.fw,.phys,.mkt,.ui-card,.step{transition:transform .25s cubic-bezier(.2,.7,.2,1),border-color .25s,box-shadow .25s,background .25s;}
+  .pain:hover,.mat:hover,.member:hover,.fw:hover,.phys:hover,.mkt:hover{transform:translateY(-6px);border-color:rgba(39,211,238,0.55);box-shadow:0 20px 50px -28px rgba(0,0,0,0.9),0 0 24px -10px var(--accent-glow);}
+  .ui-card:hover{transform:translateY(-6px);box-shadow:0 44px 80px -34px rgba(0,0,0,0.95),0 0 30px -10px var(--accent-glow);}
+  .gap,.hw,.ustep,.fl,.fs,.ag-row,.demo{transition:color .2s;}
+  .ico{width:34px;height:34px;flex:none;color:var(--accent);}
+  .ico-lg{width:46px;height:46px;color:var(--accent);}
+  /* line-art illustrations on black bg → blend so only the strokes show */
+  .art-blend{background:transparent !important;border:none !important;}
+
+  /* content frame helper */
+  .frame{position:absolute;inset:0;padding:128px var(--pad) 110px;display:flex;flex-direction:column;}
+</style>
+</head>
+<body>
+<deck-stage width="1920" height="1080">
+
+<!-- ============ 01 COVER ============ -->
+<section data-label="Cover" data-screen-label="Cover">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;top:0;right:0;width:1100px;height:1080px;overflow:hidden;">
+    <img src="assets/prototype-angle.png" alt="Smart inventory cabinet" style="width:1100px;height:1080px;object-fit:cover;object-position:center;display:block;">
+  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(100deg,var(--bg) 40%,rgba(8,11,17,0.78) 54%,rgba(8,11,17,0.18) 78%,rgba(8,11,17,0.45) 100%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(900px 600px at 88% 50%,rgba(39,211,238,0.20),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <!-- signal arcs -->
+  <svg style="position:absolute;top:50%;right:-60px;transform:translateY(-50%);opacity:0.5;" width="520" height="700" viewBox="0 0 520 700" fill="none">
+    <g stroke="var(--accent)" stroke-width="1.4" fill="none" opacity="0.7">
+      <path d="M120 350 a 120 200 0 0 1 0 -1" opacity="0"/>
+      <path d="M120 150 A 200 200 0 0 1 120 550" opacity="0.25"/>
+      <path d="M120 100 A 250 250 0 0 1 120 600" opacity="0.18"/>
+      <path d="M120 210 A 140 140 0 0 1 120 490" opacity="0.35"/>
+      <path d="M120 270 A 80 80 0 0 1 120 430" opacity="0.55"/>
+    </g>
+    <circle cx="120" cy="350" r="6" fill="var(--accent)"/>
+  </svg>
+
+  <div style="position:absolute;left:var(--pad);top:48px;font-family:var(--font-mono);font-size:15px;letter-spacing:0.3em;text-transform:uppercase;color:var(--ink);font-weight:500;">SAVE<b class="accent">4223</b></div>
+  <div style="position:absolute;right:var(--pad);top:48px;font-family:var(--font-mono);font-size:15px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mut2);">ISDN 3002 · Final Review</div>
+
+  <div class="fade" style="position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);max-width:1040px;">
+    <div class="tag" style="margin-bottom:34px;">Passive UHF RFID · Tool Tracking</div>
+    <h1 class="display" style="font-size:120px;">Smart Inventory<br>Cabinet</h1>
+    <p class="lead" style="margin-top:34px;font-size:29px;color:#B7C0CD;">Self-service tool check-out and return for shared maker spaces — every item tracked the instant a drawer closes.</p>
+  </div>
+
+  <div style="position:absolute;left:var(--pad);bottom:64px;display:flex;align-items:flex-end;gap:64px;">
+    <div>
+      <div class="kicker" style="margin-bottom:14px;color:var(--mut2);">Team</div>
+      <div class="mono" style="font-size:18px;line-height:1.9;color:var(--mut);letter-spacing:0.04em;">HE Tianlun · LI Tsz Yuk<br>ZHANG Yue · ZHANG Yunxin</div>
+    </div>
+    <div style="width:1px;height:64px;background:var(--line);"></div>
+    <div>
+      <div class="kicker" style="margin-bottom:14px;color:var(--mut2);">Deployment</div>
+      <div class="mono accent" style="font-size:18px;letter-spacing:0.04em;">save4223.isd-hub.com</div>
+      <div class="mono" style="font-size:18px;color:var(--mut);margin-top:6px;">HKUST · Room 4223 Maker Space</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 AGENDA ============ -->
+<section data-label="Agenda" data-screen-label="Agenda">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Agenda</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>02</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:1.28fr 0.72fr;gap:80px;align-items:stretch;">
+    <div style="display:flex;flex-direction:column;">
+      <div class="tag" style="margin-bottom:26px;">Contents</div>
+      <h2 class="title" style="font-size:60px;margin-bottom:30px;">What we'll cover today</h2>
+      <div style="display:flex;flex-direction:column;flex:1;justify-content:space-between;border-top:1px solid var(--line2);">
+        <div class="ag-row"><span class="ag-n">01</span><div><div class="ag-t">Background &amp; Use Case</div><div class="ag-s">The problem, what our prototype and study revealed, then how it works</div></div></div>
+        <div class="ag-row"><span class="ag-n">02</span><div><div class="ag-t">Design Protocols</div><div class="ag-s">First-build problems, market research, and the design goals</div></div></div>
+        <div class="ag-row"><span class="ag-n">03</span><div><div class="ag-t">Product Architecture</div><div class="ag-s">Materials, hardware, software and the user experience</div></div></div>
+        <div class="ag-row"><span class="ag-n">04</span><div><div class="ag-t">Team &amp; Roadmap</div><div class="ag-s">Member roles and the work still ahead</div></div></div>
+        <div class="ag-row" style="border-bottom:0;"><span class="ag-n">05</span><div><div class="ag-t accent">Live Demo &amp; Q&amp;A</div><div class="ag-s">A working walkthrough — at least 10 minutes</div></div></div>
+      </div>
+    </div>
+    <figure style="position:relative;border:1px solid var(--line);background:#0b0e14;overflow:hidden;margin:0;align-self:stretch;">
+      <img src="assets/prototype-hero.png" alt="Smart inventory cabinet" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,11,17,0.25) 0%,transparent 30%,transparent 60%,rgba(8,11,17,0.8));"></div>
+      <figcaption style="position:absolute;left:22px;right:22px;bottom:20px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mut);">Save4223 · working prototype</figcaption>
+    </figure>
+  </div>
+  <style>
+    .ag-row{display:flex;gap:30px;align-items:baseline;padding:30px 0;border-bottom:1px solid var(--line2);}
+    .ag-n{font-family:var(--font-mono);font-size:20px;color:var(--accent);width:48px;flex:none;letter-spacing:0.05em;}
+    .ag-t{font-family:var(--font-display);font-size:32px;font-weight:600;letter-spacing:-0.01em;}
+    .ag-s{font-size:20px;color:var(--mut);margin-top:8px;line-height:1.45;}
+  </style>
+</section>
+
+<!-- ============ 03 DIVIDER 01 ============ -->
+<section data-label="01 · Background" data-screen-label="Section 01">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;top:0;right:0;width:1000px;height:1080px;overflow:hidden;">
+    <img src="assets/photo-screwbox.png" alt="Room 4223 component cabinet" style="width:1000px;height:1080px;object-fit:cover;object-position:center;display:block;">
+  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(100deg,var(--bg) 38%,rgba(8,11,17,0.82) 52%,rgba(8,11,17,0.35) 100%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(800px 600px at 82% 50%,rgba(39,211,238,0.16),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Section 01</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>03</span></div>
+  <div style="position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);font-family:var(--font-display);font-weight:600;font-size:420px;line-height:0.8;color:transparent;-webkit-text-stroke:1.4px rgba(255,255,255,0.22);letter-spacing:-0.04em;">01</div>
+  <div class="fade" style="position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);">
+    <div class="tag" style="margin-bottom:30px;">Section 01</div>
+    <h2 class="display">Background<br>&amp; Use Case</h2>
+    <p class="lead" style="margin-top:30px;">Why a shared maker space needs more than a sign-out sheet.</p>
+  </div>
+</section>
+
+<!-- ============ 04 THE CHALLENGE ============ -->
+<section data-label="The Challenge" data-screen-label="The Challenge">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Background · The Challenge</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>04</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:1.08fr 0.92fr;gap:64px;align-items:center;">
+    <div>
+      <div class="tag" style="margin-bottom:24px;">The Challenge</div>
+      <h2 class="title" style="font-size:50px;max-width:20ch;margin-bottom:16px;">Tools in shared labs <span class="k">go missing</span> — with no <span class="k">live count</span></h2>
+      <p class="lead" style="font-size:21px;margin-bottom:34px;">In maker spaces like Room 4223, high-traffic hand tools are borrowed dozens of times a day. Manual tracking simply cannot keep up.</p>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="pain">
+          <svg class="ico-lg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 40 L24 8 L40 40 Z"/><path d="M24 22 V31" stroke-linecap="round"/><circle cx="24" cy="36" r="1.4" fill="currentColor" stroke="none"/></svg>
+          <div><div class="pain-t">Not returned <span class="pain-n mono">P-01</span></div><p class="pain-b">Tools are left on project desks and <strong>quietly forgotten</strong>.</p></div>
+        </div>
+        <div class="pain">
+          <svg class="ico-lg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="26" width="8" height="15"/><rect x="20" y="18" width="8" height="23"/><rect x="33" y="10" width="8" height="31"/></svg>
+          <div><div class="pain-t">Volume breaks tracking <span class="pain-n mono">P-02</span></div><p class="pain-b"><strong>Hundreds of items</strong> make paper or spreadsheet sign-out impossible.</p></div>
+        </div>
+        <div class="pain">
+          <svg class="ico-lg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 24 C12 14 36 14 43 24 C36 34 12 34 5 24 Z"/><circle cx="24" cy="24" r="5"/><path d="M9 39 L39 9" stroke-linecap="round"/></svg>
+          <div><div class="pain-t">No visibility for staff <span class="pain-n mono">P-03</span></div><p class="pain-b">Admins are <strong>unsure of inventory</strong>, with no history of who took what.</p></div>
+        </div>
+      </div>
+    </div>
+    <img src="assets/challenge-illustration-t.png" alt="Tools go missing from shared labs" style="display:block;width:100%;height:600px;object-fit:contain;">
+  </div>
+  <style>
+    .pain{display:flex;gap:22px;align-items:center;border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),rgba(16,22,31,0.3));padding:22px 26px;position:relative;}
+    .pain::before{content:"";position:absolute;top:0;left:0;width:2px;height:46px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+    .pain .ico-lg{flex:none;}
+    .pain-n{font-size:14px;letter-spacing:0.2em;color:var(--mut2);margin-left:8px;vertical-align:middle;}
+    .pain-t{font-family:var(--font-display);font-size:25px;font-weight:600;margin-bottom:6px;line-height:1.1;}
+    .pain-b{font-size:19.5px;line-height:1.45;color:var(--mut);}
+    .art-slot{display:block;width:100%;height:600px;border:1px solid var(--line);background:#000;}
+  </style>
+</section>
+
+<!-- ============ 05 USER STUDY (after Challenge) ============ -->
+<section data-label="User Study" data-screen-label="User Study">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Background · User Study</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>05</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:0.92fr 1.08fr;gap:84px;align-items:stretch;">
+    <div style="display:flex;flex-direction:column;">
+      <div class="tag" style="margin-bottom:26px;">User Study</div>
+      <h2 class="title" style="font-size:50px;margin-bottom:24px;">Understanding how tools move through 4223</h2>
+      <p class="lead" style="font-size:21px;margin-bottom:32px;">Through our first semester we interviewed regular 4223 users and lab staff, and put a working prototype in their hands — to learn how tools really move through the space.</p>
+      <div style="border-left:2px solid var(--accent);padding:6px 0 6px 24px;box-shadow:-1px 0 12px -6px var(--accent-glow);margin-bottom:30px;">
+        <div class="kicker accent" style="margin-bottom:10px;">Key takeaway</div>
+        <p style="font-size:20px;line-height:1.45;color:var(--ink);max-width:36ch;">UHF&nbsp;RFID + NFC authentication can make tool tracking <strong>seamless and hands-off</strong>.</p>
+      </div>
+      <figure style="position:relative;display:block;width:100%;flex:1;min-height:200px;border:1px solid var(--line);overflow:hidden;margin:0;background:#0b0e14;">
+        <img src="assets/photo-lab.jpg" alt="HKUST Room 4223 maker space" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(8,11,17,0.82));"></div>
+        <figcaption style="position:absolute;left:16px;bottom:12px;font-family:var(--font-mono);font-size:13.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mut);">Room 4223 — the maker space we studied</figcaption>
+      </figure>
+    </div>
+    <div style="display:flex;flex-direction:column;">
+      <div class="kicker" style="margin-bottom:20px;">How we ran it →</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;">
+        <div class="method"><div class="method-h"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7h15a2 2 0 012 2v7a2 2 0 01-2 2h-8l-5 4v-4H5a2 2 0 01-2-2V9a2 2 0 012-2z"/><path d="M9 11h9M9 15h6" stroke-linecap="round"/></svg><span class="method-t">Member interviews</span></div><p class="method-b">Regular borrowers walked us through what slows them down day to day.</p></div>
+        <div class="method"><div class="method-h"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="6" width="18" height="22" rx="2"/><path d="M12 6V4a2 2 0 012-2h4a2 2 0 012 2v2M12 14h8M12 19h8M12 24h5" stroke-linecap="round"/></svg><span class="method-t">Lab-staff interviews</span></div><p class="method-b">Technicians described the inventory blind spots they live with.</p></div>
+        <div class="method"><div class="method-h"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="9" width="20" height="17" rx="2"/><path d="M6 15h20M12 9V6M20 9V6M13 20h6" stroke-linecap="round"/></svg><span class="method-t">Prototype field test</span></div><p class="method-b">A working cabinet let users try tap-to-borrow in the real space.</p></div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .method{border:1px solid var(--line);background:rgba(16,22,31,0.45);padding:22px 28px;flex:1;display:flex;flex-direction:column;justify-content:center;transition:transform .25s,border-color .25s;}
+    .method:hover{transform:translateY(-4px);border-color:rgba(39,211,238,0.5);}
+    .method-h{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+    .method-h .ico{width:32px;height:32px;}
+    .method-t{font-family:var(--font-display);font-size:24px;font-weight:600;}
+    .method-b{font-size:19.5px;line-height:1.45;color:var(--mut);}
+  </style>
+</section>
+
+<!-- ============ 06 USE CASE ============ -->
+<section data-label="Primary Use Case" data-screen-label="Primary Use Case">
+  <div class="bg-dots"></div>
+  <div class="bg-grad"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Background · Primary Use Case</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>06</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:22px;">Primary Use Case</div>
+    <h2 class="title" style="font-size:60px;margin-bottom:16px;">Tap. Take. <span class="accent">Tracked.</span></h2>
+    <p class="lead" style="font-size:22px;max-width:90ch;">A student taps their campus card, opens a drawer, takes a tool, and closes it — the cabinet logs the change automatically. No forms, no staff, no sign-out sheet.</p>
+    <div class="journey">
+      <div class="jrow">
+        <div class="jcard">
+          <div class="jphoto"><img src="assets/photo-user-tap.jpg" alt="Tap NFC card to authenticate" style="object-position:center 60%;"><span class="jbadge mono">01</span></div>
+          <div class="jnum mono">AUTHENTICATE</div><div class="jt">Tap to identify</div><div class="jb">Tap the paired NFC student card at the cabinet.</div>
+        </div>
+        <div class="jcard">
+          <div class="jphoto"><img src="assets/photo-drawer-tools.jpg" alt="Drawer unlocks" style="object-position:center 45%;"><span class="jbadge mono">02</span></div>
+          <div class="jnum mono">ACCESS</div><div class="jt">Drawer unlocks</div><div class="jb">The permitted drawer releases; the LED turns green.</div>
+        </div>
+        <div class="jcard">
+          <div class="jphoto"><img src="assets/photo-drawers.jpg" alt="Take or return tools" style="object-position:center 55%;"><span class="jbadge mono">03</span></div>
+          <div class="jnum mono">TAKE OR RETURN</div><div class="jt">Grab what you need</div><div class="jb">Remove or replace any tools, then close the drawer.</div>
+        </div>
+        <div class="jcard">
+          <div class="jphoto"><img src="assets/ui-tool-library-v2.png" alt="Auto-logged to the cloud" style="object-position:left top;"><span class="jbadge mono">04</span></div>
+          <div class="jnum mono">AUTO-LOGGED</div><div class="jt">Synced instantly</div><div class="jb">UHF RFID re-scans contents and syncs to the cloud.</div>
+        </div>
+      </div>
+    </div>
+    <div class="who-row">
+      <div class="who-card"><svg class="who-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M5 26c0-4 3-7 7-7s7 3 7 7" stroke-linecap="round"/><circle cx="22" cy="13" r="3"/><path d="M21 19c3 0 6 2.5 6 7" stroke-linecap="round"/></svg><div><div class="who-h">Students &amp; members</div><div class="who-p">Self-serve borrowing, anytime the lab is open.</div></div></div>
+      <div class="who-card"><svg class="who-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="9" width="20" height="17" rx="2"/><path d="M12 9V7a2 2 0 012-2h4a2 2 0 012 2v2M11 16h10M11 21h6" stroke-linecap="round"/></svg><div><div class="who-h">Lab staff</div><div class="who-p">Live inventory and a complete usage history.</div></div></div>
+      <div class="who-card"><svg class="who-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4l10 4v7c0 6-4 10-10 13C10 25 6 21 6 15V8z"/><path d="M11 16l3.5 3.5L21 12" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="who-h">Administrators</div><div class="who-p">Per-drawer permissions and full tool / tag control.</div></div></div>
+    </div>
+  </div>
+  <style>
+    .journey{flex:1;display:flex;align-items:center;}
+    .jrow{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:26px;}
+    .jcard{display:flex;flex-direction:column;}
+    .jphoto{position:relative;height:212px;border:1px solid var(--line);overflow:hidden;margin-bottom:18px;background:#0b0e14;transition:transform .25s,border-color .25s;}
+    .jcard:hover .jphoto{transform:translateY(-5px);border-color:rgba(39,211,238,0.55);box-shadow:0 18px 40px -22px rgba(0,0,0,0.9),0 0 22px -10px var(--accent-glow);}
+    .jphoto img{width:100%;height:100%;object-fit:cover;display:block;}
+    .jbadge{position:absolute;left:0;top:0;background:var(--accent);color:var(--bg);font-size:16px;font-weight:600;letter-spacing:0.04em;padding:6px 12px;}
+    .jnum{font-family:var(--font-mono);font-size:14px;letter-spacing:0.2em;color:var(--accent);margin-bottom:10px;}
+    .jt{font-family:var(--font-display);font-size:23px;font-weight:600;margin-bottom:9px;}
+    .jb{font-size:18px;line-height:1.45;color:var(--mut);}
+    .who-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;border-top:1px solid var(--line);padding-top:28px;}
+    .who-card{display:flex;gap:18px;align-items:center;}
+    .who-ic{width:34px;height:34px;flex:none;color:var(--accent);}
+    .who-h{font-family:var(--font-display);font-size:21px;font-weight:600;margin-bottom:5px;}
+    .who-p{font-size:18px;color:var(--mut);line-height:1.4;}
+  </style>
+</section>
+
+<!-- ============ 06 DIVIDER 02 ============ -->
+<section data-label="02 · Protocols" data-screen-label="Section 02">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;top:0;right:0;width:1000px;height:1080px;overflow:hidden;">
+    <img src="assets/ui-tool-library-v2.png" alt="" style="width:1000px;height:1080px;object-fit:cover;object-position:left top;display:block;">
+  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(100deg,var(--bg) 38%,rgba(8,11,17,0.86) 52%,rgba(8,11,17,0.45) 100%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(800px 600px at 82% 50%,rgba(39,211,238,0.16),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Section 02</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>07</span></div>
+  <div style="position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);font-family:var(--font-display);font-weight:600;font-size:420px;line-height:0.8;color:transparent;-webkit-text-stroke:1.4px rgba(255,255,255,0.22);letter-spacing:-0.04em;">02</div>
+  <div class="fade" style="position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);">
+    <div class="tag" style="margin-bottom:30px;">Section 02</div>
+    <h2 class="display">Design<br>Protocols</h2>
+    <p class="lead" style="margin-top:30px;">The problems from our first build, the market we studied, and the goals they set.</p>
+  </div>
+</section>
+
+<!-- ============ 08 PROTOCOLS · PROBLEMS ============ -->
+<section data-label="Problems from Semester 1" data-screen-label="Problems from Semester 1">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Protocols · Problems from Semester 1</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>08</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:372px 1fr;gap:68px;align-items:stretch;">
+    <figure style="position:relative;border:1px solid var(--line);background:#0b0e14;overflow:hidden;margin:0;align-self:stretch;">
+      <img src="assets/photo-proto1-v2.png" alt="Our first-generation prototype" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,11,17,0.82));"></div>
+      <span class="mono" style="position:absolute;left:16px;top:16px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--bg);background:var(--accent);padding:6px 11px;font-weight:600;">Semester 1</span>
+      <figcaption style="position:absolute;left:16px;right:16px;bottom:14px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mut);">Our first-generation prototype — hand-labelled plastic drawers</figcaption>
+    </figure>
+    <div style="display:flex;flex-direction:column;">
+      <div class="tag" style="margin-bottom:22px;">From the First Build</div>
+      <h2 class="title" style="font-size:46px;margin-bottom:16px;max-width:18ch;">What the first prototype got wrong</h2>
+      <p class="lead" style="font-size:20px;margin-bottom:30px;max-width:64ch;">Our Semester-1 prototype proved the concept — but living with it exposed five weaknesses, each now a hard requirement for this build.</p>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:18px;min-height:0;">
+        <div class="gapc"><span class="gn mono">G1</span><div class="gt">High latency after card tap</div><div class="gd">No real-time feedback at the cabinet.</div></div>
+        <div class="gapc"><span class="gn mono">G2</span><div class="gt">Insufficient storage</div><div class="gd">Too small for the range of tools needed.</div></div>
+        <div class="gapc"><span class="gn mono">G3</span><div class="gt">Poor RFID isolation</div><div class="gd">Tools just outside were still detected.</div></div>
+        <div class="gapc"><span class="gn mono">G4</span><div class="gt">No industrial design</div><div class="gd">An off-the-shelf box clashed with 4223.</div></div>
+        <div class="gapc"><span class="gn mono">G5</span><div class="gt">Weak lock mechanism</div><div class="gd">Too flimsy for daily, high-volume use.</div></div>
+        <div class="gapc gapc-out"><span class="gn mono accent">→</span><div class="gt">Five problems, five goals</div><div class="gd">Each weakness became a requirement driving this year's redesign.</div></div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .gapc{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),rgba(16,22,31,0.3));padding:22px 24px;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;}
+    .gapc::before{content:"";position:absolute;top:0;left:0;width:2px;height:38px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+    .gapc:hover{transform:translateY(-4px);border-color:rgba(39,211,238,0.5);box-shadow:0 16px 36px -22px rgba(0,0,0,0.9),0 0 20px -10px var(--accent-glow);}
+    .gapc .gn{font-size:16px;letter-spacing:0.12em;color:var(--accent);margin-bottom:11px;}
+    .gapc .gt{font-family:var(--font-display);font-size:27px;font-weight:600;margin-bottom:9px;line-height:1.15;}
+    .gapc .gd{font-size:20px;line-height:1.4;color:var(--mut);}
+    .gapc-out{background:rgba(39,211,238,0.06);border-color:rgba(39,211,238,0.32);}
+    .gapc-out::before{display:none;}
+    .gapc-out .gt{color:var(--ink);}
+    .gapc-out .gn{font-size:24px;}
+  </style>
+</section>
+
+<!-- ============ 09 MARKET RESEARCH / GOALS ============ -->
+<section data-label="Market &amp; Goals" data-screen-label="Market and Goals">
+  <div class="bg-dots"></div>
+  <div class="bg-grad"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Protocols · Market &amp; Design Goals</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>09</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:22px;">Market Research → Design Goals</div>
+    <h2 class="title" style="font-size:48px;margin-bottom:12px;max-width:26ch;">Two paths to manufacture, one set of goals</h2>
+    <p class="lead" style="font-size:20px;margin-bottom:30px;max-width:78ch;">Surveying the market showed a clear split: build a bespoke prototype to prove the concept, or adopt a stock sheet-metal cabinet for scale. Both feed the same requirements.</p>
+    <div style="flex:1;display:grid;grid-template-columns:1.32fr 0.68fr;gap:56px;align-items:center;min-height:0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
+        <div>
+          <div class="goal-h"><span class="mono accent">01</span> Functional goals</div>
+          <ul class="goals">
+            <li>Sturdy and large enough for varied tools, up to a hand drill</li>
+            <li>Mechanical lock that opens even during a power outage</li>
+            <li>RFID-enabled and properly isolated against misreads</li>
+            <li>Embeds all hardware — reader, locks, LED strip, QR/NFC, display</li>
+          </ul>
+        </div>
+        <div>
+          <div class="goal-h"><span class="mono accent">02</span> Industrial design goals</div>
+          <ul class="goals">
+            <li>Match the existing 4223 furniture and maker-space style</li>
+            <li>Recess the display and QR reader so the top stays usable</li>
+            <li>Clean, clear UI with both Chinese and English support</li>
+            <li>Modern functionality without visual clutter</li>
+          </ul>
+        </div>
+      </div>
+      <img src="assets/market-illustration-t.png" alt="Smart inventory cabinet with RFID" style="display:block;width:100%;height:478px;object-fit:contain;align-self:start;margin-top:-48px;">
+    </div>
+    <div style="margin-top:26px;display:flex;gap:24px;">
+      <div class="mkt"><div class="mkt-t">Prototype route</div><div class="mkt-b">Aluminium-profile frame + composite panels — full control to DIY and validate.</div></div>
+      <div class="mkt"><div class="mkt-t accent">Mass-production route</div><div class="mkt-b">Stock sheet-metal cabinet — low cost, easy assembly, built-in RF shielding.</div></div>
+    </div>
+  </div>
+  <style>
+    .goal-h{font-family:var(--font-display);font-size:25px;font-weight:600;margin-bottom:20px;display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);padding-bottom:16px;}
+    .goals{list-style:none;display:flex;flex-direction:column;gap:14px;}
+    .goals li{font-size:20px;line-height:1.4;color:var(--mut);padding-left:24px;position:relative;}
+    .goals li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border:1px solid var(--accent);}
+    .mkt{flex:1;border:1px solid var(--line);background:rgba(16,22,31,0.4);padding:20px 24px;}
+    .mkt-t{font-family:var(--font-display);font-size:21px;font-weight:600;margin-bottom:7px;}
+    .mkt-b{font-size:19.5px;color:var(--mut);line-height:1.42;}
+  </style>
+</section>
+
+<!-- ============ 09 DIVIDER 03 ============ -->
+<section data-label="03 · Architecture" data-screen-label="Section 03">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;top:0;right:0;width:1000px;height:1080px;overflow:hidden;">
+    <img src="assets/prototype-internals.png" alt="" style="width:1000px;height:1080px;object-fit:cover;object-position:center;display:block;">
+  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(100deg,var(--bg) 38%,rgba(8,11,17,0.84) 52%,rgba(8,11,17,0.4) 100%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(800px 600px at 82% 50%,rgba(39,211,238,0.16),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Section 03</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>10</span></div>
+  <div style="position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);font-family:var(--font-display);font-weight:600;font-size:420px;line-height:0.8;color:transparent;-webkit-text-stroke:1.4px rgba(255,255,255,0.22);letter-spacing:-0.04em;">03</div>
+  <div class="fade" style="position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);">
+    <div class="tag" style="margin-bottom:30px;">Section 03</div>
+    <h2 class="display">Product<br>Architecture</h2>
+    <p class="lead" style="margin-top:30px;">Materials, hardware, software, and the experience — engineered together.</p>
+  </div>
+</section>
+
+<!-- ============ 10 SYSTEM ARCHITECTURE ============ -->
+<section data-label="System Architecture" data-screen-label="System Architecture">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · System Overview</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>11</span></div>
+  <div class="frame" style="padding-bottom:96px;">
+    <div class="tag" style="margin-bottom:22px;">System Overview</div>
+    <h2 class="title" style="font-size:50px;margin-bottom:30px;">A <span class="k">Raspberry Pi</span> orchestrates every edge device</h2>
+    <div style="flex:1;min-height:0;margin-top:6px;">
+      <svg viewBox="0 0 1728 600" style="width:100%;height:100%;" fill="none" preserveAspectRatio="xMidYMid meet" font-family="'Space Grotesk',sans-serif">
+        <defs>
+          <marker id="arw" markerWidth="11" markerHeight="11" refX="7" refY="4" orient="auto"><path d="M1 1 L8 4 L1 7" fill="none" stroke="#27D3EE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
+        <!-- column labels -->
+        <text x="202" y="582" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" letter-spacing="3" fill="#525E70">EDGE DEVICES</text>
+        <text x="856" y="582" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" letter-spacing="3" fill="#525E70">CONTROLLER</text>
+        <text x="1553" y="582" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" letter-spacing="3" fill="#525E70">CLOUD</text>
+        <!-- connectors: edge devices -> hub (shared bus at x=600) -->
+        <g stroke="rgba(39,211,238,0.5)" stroke-width="1.6" fill="none">
+          <path d="M394 70 H600 V250 H704"/>
+          <path d="M394 216 H600 V284 H704"/>
+          <path d="M394 362 H600 V316 H704"/>
+          <path d="M394 508 H600 V350 H704"/>
+        </g>
+        <!-- hub -> cloud -->
+        <path d="M1008 300 H1384" stroke="#27D3EE" stroke-width="1.6" stroke-dasharray="7 7" marker-end="url(#arw)"/>
+        <text x="1196" y="286" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="14" letter-spacing="3" fill="#27D3EE">SYNC</text>
+        <!-- connection dots -->
+        <g fill="#27D3EE">
+          <circle cx="394" cy="70" r="3.6"/><circle cx="394" cy="216" r="3.6"/><circle cx="394" cy="362" r="3.6"/><circle cx="394" cy="508" r="3.6"/>
+          <circle cx="704" cy="250" r="3.6"/><circle cx="704" cy="284" r="3.6"/><circle cx="704" cy="316" r="3.6"/><circle cx="704" cy="350" r="3.6"/>
+        </g>
+        <!-- left edge nodes -->
+        <g>
+          <rect x="10" y="14" width="384" height="112" rx="4" fill="rgba(16,22,31,0.92)" stroke="rgba(255,255,255,0.14)"/>
+          <text x="34" y="60" font-size="22" font-weight="600" fill="#EEF2F7">RFID Reader</text>
+          <text x="34" y="92" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">4-ch UHF · 2 antennas</text>
+          <rect x="10" y="160" width="384" height="112" rx="4" fill="rgba(16,22,31,0.92)" stroke="rgba(255,255,255,0.14)"/>
+          <text x="34" y="206" font-size="22" font-weight="600" fill="#EEF2F7">Touchscreen + QR</text>
+          <text x="34" y="238" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">Guidance &amp; identity</text>
+          <rect x="10" y="306" width="384" height="112" rx="4" fill="rgba(16,22,31,0.92)" stroke="rgba(255,255,255,0.14)"/>
+          <text x="34" y="352" font-size="22" font-weight="600" fill="#EEF2F7">4× Electromagnetic locks</text>
+          <text x="34" y="384" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">Per-drawer access</text>
+          <rect x="10" y="452" width="384" height="112" rx="4" fill="rgba(16,22,31,0.92)" stroke="rgba(255,255,255,0.14)"/>
+          <text x="34" y="498" font-size="22" font-weight="600" fill="#EEF2F7">4× IR sensors · LED</text>
+          <text x="34" y="530" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">Closure &amp; status</text>
+        </g>
+        <!-- hub -->
+        <rect x="690" y="193" width="332" height="214" rx="8" fill="none" stroke="rgba(39,211,238,0.16)" stroke-width="16"/>
+        <rect x="704" y="205" width="304" height="190" rx="5" fill="rgba(16,22,31,0.98)" stroke="#27D3EE" stroke-width="1.8"/>
+        <text x="856" y="278" text-anchor="middle" font-size="28" font-weight="600" fill="#EEF2F7">Raspberry Pi</text>
+        <text x="856" y="312" text-anchor="middle" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">Local logic · auth · logging</text>
+        <text x="856" y="352" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" letter-spacing="3" fill="#27D3EE">LOCAL + CLOUD SYNC</text>
+        <!-- cloud -->
+        <rect x="1384" y="205" width="334" height="190" rx="5" fill="rgba(16,22,31,0.9)" stroke="rgba(39,211,238,0.55)" stroke-width="1.4" stroke-dasharray="4 5"/>
+        <text x="1551" y="278" text-anchor="middle" font-size="26" font-weight="600" fill="#EEF2F7">Cloud Platform</text>
+        <text x="1551" y="312" text-anchor="middle" font-family="'Manrope',sans-serif" font-size="16" fill="#8A95A6">Supabase · Vercel</text>
+        <text x="1551" y="352" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" letter-spacing="3" fill="#27D3EE">AUTH · LOGGING · STORAGE</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 HARDWARE ============ -->
+<section data-label="Hardware" data-screen-label="Hardware">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Hardware</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>12</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:0.78fr 1.22fr;gap:72px;align-items:center;">
+    <div style="position:relative;">
+      <div style="border:1px solid var(--line);background:#0b0e14;overflow:hidden;position:relative;">
+        <img src="assets/prototype-internals.png" alt="Cabinet internal hardware bay" style="display:block;width:100%;height:660px;object-fit:cover;object-position:center;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 62%,rgba(8,11,17,0.6));"></div>
+        <div style="position:absolute;left:18px;bottom:16px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mut);">Fig. 02 — Rear hardware bay · reader, controller, PSU, locks</div>
+      </div>
+    </div>
+    <div>
+      <div class="tag" style="margin-bottom:24px;">Hardware</div>
+      <h2 class="title" style="font-size:50px;margin-bottom:34px;">Embedded, not bolted on</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px 40px;">
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="20" height="20" rx="2"/><rect x="11" y="11" width="10" height="10"/><path d="M9 3v3M14 3v3M19 3v3M23 3v3M9 26v3M14 26v3M19 26v3M23 26v3M3 9h3M3 14h3M3 19h3M3 23h3M26 9h3M26 14h3M26 19h3M26 23h3" stroke-linecap="round"/></svg><div><div class="hw-t">Main controller</div><div class="hw-b"><strong>Raspberry Pi</strong> — local logic plus cloud sync for auth and usage logging.</div></div></div>
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 22v7M11 29h10" stroke-linecap="round"/><path d="M16 18a4 4 0 100-8 4 4 0 000 8z"/><path d="M9 9a9 9 0 0114 0M6 5a14 14 0 0120 0" stroke-linecap="round"/></svg><div><div class="hw-t">UHF RFID reader</div><div class="hw-b"><strong>4-channel</strong> reader at <strong>33&nbsp;dBm</strong>, EPC Gen2, with two antennas for full-volume coverage.</div></div></div>
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="14" width="18" height="14" rx="2"/><path d="M11 14v-3a5 5 0 0110 0v3" stroke-linecap="round"/><circle cx="16" cy="20" r="1.6" fill="currentColor" stroke="none"/></svg><div><div class="hw-t">4× electromagnetic locks</div><div class="hw-b">Each drawer independently controlled for <strong>per-user access</strong> permissions.</div></div></div>
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="16" cy="16" r="4"/><path d="M16 5v3M16 24v3M5 16h3M24 16h3M8.5 8.5l2 2M21.5 21.5l-2-2M8.5 23.5l2-2M21.5 10.5l-2 2" stroke-linecap="round"/></svg><div><div class="hw-t">4× infrared sensors</div><div class="hw-b">Detect <strong>physical drawer closure</strong> — real feedback, independent of lock state.</div></div></div>
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="6" width="22" height="15" rx="1.5"/><path d="M12 25h8M16 21v4" stroke-linecap="round"/><rect x="10" y="10" width="5" height="5"/><path d="M18 10h4M18 14h4" stroke-linecap="round"/></svg><div><div class="hw-t">Touchscreen + QR scanner</div><div class="hw-b">On-cabinet guidance, drawer status, and <strong>identity verification</strong>.</div></div></div>
+        <div class="hw"><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 13h6l7-5v16l-7-5H4z"/><path d="M22 11a6 6 0 010 10M25 8a10 10 0 010 16" stroke-linecap="round"/></svg><div><div class="hw-t">LED strip + speaker</div><div class="hw-b">Instant visual status — <strong>granted, denied, drawer open</strong> — with audio alerts.</div></div></div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .hw{position:relative;display:flex;gap:16px;align-items:flex-start;}
+    .hw .ico{margin-top:2px;transition:transform .25s;}
+    .hw:hover .ico{transform:scale(1.12);}
+    .hw-t{font-family:var(--font-display);font-size:23px;font-weight:600;margin-bottom:8px;}
+    .hw-b{font-size:19px;line-height:1.45;color:var(--mut);}
+  </style>
+</section>
+
+<!-- ============ 11 MATERIALS ============ -->
+<section data-label="Materials" data-screen-label="Materials">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Materials</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>13</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:22px;">Materials · An Architecture of Compromise</div>
+    <h2 class="title" style="font-size:50px;max-width:30ch;margin-bottom:14px;">Every panel does <span class="k">one job</span> well</h2>
+    <p class="lead" style="font-size:20px;margin-bottom:40px;max-width:82ch;">The enclosure must block RF; the drawers must pass it. We selected each material for a single property — shielding, transparency, stiffness, or strength.</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-bottom:36px;">
+      <div class="mat"><div class="mat-top"><div class="mat-role mono">ENCLOSURE · ISOLATE</div><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4l10 3v8c0 6-4 10-10 13C10 25 6 21 6 15V7z"/><path d="M11 16l3.5 3.5L21 12" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="mat-t">Aluminium composite panel</div><p class="mat-b">A built-in <strong>Faraday cage</strong> — light, low-cost, V-groove folds to crisp corners.</p></div>
+      <div class="mat"><div class="mat-top"><div class="mat-role mono">DRAWER SIDES · PASS</div><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16c3-5 5-5 8 0s5 5 8 0 5-5 8 0" stroke-linecap="round"/><path d="M4 23c3-5 5-5 8 0s5 5 8 0 5-5 8 0" stroke-linecap="round" opacity="0.5"/><path d="M4 9c3-5 5-5 8 0s5 5 8 0 5-5 8 0" stroke-linecap="round" opacity="0.5"/></svg></div><div class="mat-t">PC hollow sunboard</div><p class="mat-b">Light and semi-transparent so <strong>UHF waves pass through</strong>; ribbed for stiffness.</p></div>
+      <div class="mat"><div class="mat-top"><div class="mat-role mono">DRAWER BASE · BEAR</div><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11l12-5 12 5-12 5z"/><path d="M4 16l12 5 12-5M4 21l12 5 12-5" stroke-linejoin="round"/></svg></div><div class="mat-t">Plywood</div><p class="mat-b">The <strong>hardest, load-bearing</strong> surface — and the safe touch surface.</p></div>
+      <div class="mat"><div class="mat-top"><div class="mat-role mono">FRAME · CARRY</div><svg class="ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="22" height="22" rx="1"/><path d="M5 12h22M5 20h22M12 5v22M20 5v22" opacity="0.6"/></svg></div><div class="mat-t">Aluminium T-slot extrusion</div><p class="mat-b">Holds <strong>200&nbsp;kg</strong> and expands with pegboards and accessories.</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:28px;">
+      <div class="phys">
+        <div class="kicker accent" style="margin-bottom:14px;">Shielding physics · the core conflict</div>
+        <p style="font-size:19px;line-height:1.5;color:var(--ink);">Target: <span class="accent">100%</span> read inside, <span class="accent">0%</span> misread outside. At 915&nbsp;MHz the skin depth sets the shield: aluminium needs only <span class="mono">~0.15&nbsp;mm</span>, steel&nbsp;304 <span class="mono">~0.78&nbsp;mm</span>. With wavelength λ&nbsp;≈&nbsp;33&nbsp;cm, any seam wider than <span class="mono">λ/30</span> leaks — so conductive tape bridges every panel join.</p>
+      </div>
+      <div class="phys" style="border-color:rgba(39,211,238,0.4);">
+        <div class="kicker accent" style="margin-bottom:14px;">Upgrade &amp; scale</div>
+        <p style="font-size:19px;line-height:1.5;color:var(--mut);"><b style="color:var(--ink);">Honeycomb aluminium</b> for the best stiffness-to-weight, and a stock <b style="color:var(--ink);">steel filing cabinet</b> at scale — harder, cheaper, with shielding built in.</p>
+      </div>
+    </div>
+  </div>
+  <style>
+    .mat{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),rgba(16,22,31,0.3));padding:22px 22px 26px;position:relative;}
+    .mat::before{content:"";position:absolute;top:0;left:0;width:40px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+    .mat-role{font-size:13px;letter-spacing:0.16em;color:var(--mut2);}
+    .mat-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;}
+    .mat-top .ico{width:30px;height:30px;flex:none;transition:transform .25s;}
+    .mat:hover .mat-top .ico{transform:scale(1.12);}
+    .mat-t{font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.1;margin-bottom:11px;}
+    .mat-b{font-size:19px;line-height:1.45;color:var(--mut);}
+    .phys{border:1px solid var(--line);background:rgba(16,22,31,0.45);padding:24px 26px;}
+  </style>
+</section>
+
+<!-- ============ 12 RF ISOLATION (concept diagram) ============ -->
+<section data-label="RF Isolation" data-screen-label="RF Isolation">
+  <div class="bg-dots"></div>
+  <div class="bg-grad"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · RF Isolation</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>14</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:1.12fr 0.88fr;gap:72px;align-items:center;">
+    <div>
+      <div class="tag" style="margin-bottom:22px;">Engineering Deep-Dive</div>
+      <h2 class="title" style="font-size:50px;margin-bottom:26px;max-width:18ch;">The cabinet is a <span class="k">Faraday cage</span></h2>
+      <!-- concept diagram -->
+      <div style="position:relative;border:1px solid var(--line);background:rgba(16,22,31,0.4);padding:30px 34px;">
+        <svg viewBox="0 0 760 430" style="width:100%;height:auto;display:block;" fill="none">
+          <!-- cabinet body -->
+          <rect x="40" y="40" width="430" height="350" rx="6" stroke="var(--accent)" stroke-width="3"/>
+          <rect x="40" y="40" width="430" height="350" rx="6" stroke="var(--accent)" stroke-width="10" opacity="0.12"/>
+          <!-- drawer lines -->
+          <path d="M40 130 H470 M40 215 H470 M40 300 H470" stroke="rgba(255,255,255,0.14)" stroke-width="1.4"/>
+          <!-- antenna inside (top) -->
+          <g transform="translate(255,86)">
+            <path d="M0 18 V2 M-9 -2 a 13 13 0 0 1 18 0 M-16 -8 a 23 23 0 0 1 32 0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="0" cy="20" r="3" fill="var(--accent)"/>
+          </g>
+          <!-- contained waves -->
+          <g stroke="var(--accent)" stroke-width="1.6" opacity="0.55" fill="none">
+            <path d="M180 250 a 70 70 0 0 1 150 0" opacity="0.3"/>
+            <path d="M205 250 a 45 45 0 0 1 100 0" opacity="0.5"/>
+            <path d="M228 250 a 22 22 0 0 1 54 0" opacity="0.75"/>
+          </g>
+          <!-- tagged tool inside (glowing) -->
+          <g transform="translate(232,250)">
+            <rect x="0" y="0" width="46" height="30" rx="3" fill="rgba(39,211,238,0.12)" stroke="var(--accent)" stroke-width="1.8"/>
+            <path d="M8 15 h30 M8 9 h22" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="55" cy="6" r="4" fill="var(--accent)"/>
+          </g>
+          <text x="255" y="350" text-anchor="middle" font-family="JetBrains Mono" font-size="15" letter-spacing="2" fill="var(--accent)">INSIDE · 100% READ</text>
+
+          <!-- blocked wave at the wall -->
+          <g stroke="#E25563" stroke-width="1.8" fill="none">
+            <path d="M500 150 a 40 40 0 0 1 0 130" stroke-dasharray="5 6" opacity="0.8"/>
+            <path d="M530 130 a 60 60 0 0 1 0 170" stroke-dasharray="5 6" opacity="0.5"/>
+          </g>
+          <!-- outside tool (greyed, not detected) -->
+          <g transform="translate(600,200)" opacity="0.65">
+            <rect x="0" y="0" width="46" height="30" rx="3" fill="none" stroke="var(--mut)" stroke-width="1.6"/>
+            <path d="M8 15 h30 M8 9 h22" stroke="var(--mut)" stroke-width="1.4" stroke-linecap="round"/>
+            <g stroke="#E25563" stroke-width="2.4" stroke-linecap="round"><path d="M58 4 l16 16 M74 4 l-16 16"/></g>
+          </g>
+          <text x="623" y="262" text-anchor="middle" font-family="JetBrains Mono" font-size="15" letter-spacing="2" fill="var(--mut)">OUTSIDE · 0%</text>
+          <!-- seam/tape callout -->
+          <circle cx="40" cy="215" r="7" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.6"/>
+          <path d="M47 215 H120" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+          <text x="56" y="206" font-family="JetBrains Mono" font-size="12.5" letter-spacing="1.5" fill="var(--mut)">CONDUCTIVE TAPE</text>
+        </svg>
+      </div>
+    </div>
+    <div>
+      <p class="lead" style="font-size:21px;margin-bottom:34px;">Every tag inside must read; nothing outside may. We close the box electrically so the signal <strong>stays in</strong>.</p>
+      <div class="iso-stat">
+        <div><div class="iso-v accent">100%</div><div class="iso-l">read rate inside</div></div>
+        <div style="width:1px;background:var(--line);"></div>
+        <div><div class="iso-v">0%</div><div class="iso-l">misread outside</div></div>
+      </div>
+      <div class="kicker" style="margin:34px 0 18px;">Equivalent shielding @ 915&nbsp;MHz</div>
+      <div class="bar"><span class="bar-k">Copper</span><span class="bar-track"><span class="bar-fill" style="width:14%;"></span></span><span class="bar-v mono">0.11 mm</span></div>
+      <div class="bar"><span class="bar-k">Aluminium</span><span class="bar-track"><span class="bar-fill" style="width:19%;"></span></span><span class="bar-v mono">0.15 mm</span></div>
+      <div class="bar"><span class="bar-k accent">Steel 304</span><span class="bar-track"><span class="bar-fill on" style="width:100%;"></span></span><span class="bar-v mono accent">0.78 mm</span></div>
+      <p style="font-size:18px;line-height:1.5;color:var(--mut);margin-top:26px;">Wavelength λ&nbsp;≈&nbsp;<strong>33&nbsp;cm</strong> — any seam wider than <span class="k">λ/30</span> leaks, so conductive tape bridges every panel join.</p>
+    </div>
+  </div>
+  <style>
+    .iso-stat{display:flex;gap:30px;align-items:center;border:1px solid var(--line);background:rgba(16,22,31,0.45);padding:24px 30px;}
+    .iso-v{font-family:var(--font-display);font-size:52px;font-weight:600;line-height:1;}
+    .iso-l{font-size:16.5px;color:var(--mut);margin-top:8px;letter-spacing:0.02em;}
+    .bar{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+    .bar-k{font-family:var(--font-display);font-size:19px;font-weight:500;width:104px;flex:none;}
+    .bar-track{flex:1;height:10px;background:rgba(255,255,255,0.06);border:1px solid var(--line);position:relative;}
+    .bar-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,0.22);}
+    .bar-fill.on{background:linear-gradient(90deg,var(--accent-deep),var(--accent));box-shadow:0 0 16px -2px var(--accent-glow);}
+    .bar-v{width:78px;flex:none;text-align:right;font-size:16.5px;color:var(--mut);}
+  </style>
+</section>
+
+<!-- ============ 13 DIMENSIONS / FORM ============ -->
+<section data-label="Form &amp; Dimensions" data-screen-label="Form and Dimensions">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Form &amp; Dimensions</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>15</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:80px;align-items:center;">
+    <div>
+      <div class="tag" style="margin-bottom:24px;">Form &amp; Dimensions</div>
+      <h2 class="title" style="font-size:54px;margin-bottom:30px;max-width:18ch;">Sized to the bench, built to move</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 48px;">
+        <div class="spec"><div class="spec-v">620 × 522 × 850<span>mm</span></div><div class="spec-l">Overall footprint — 850&nbsp;mm meets standard workbench height</div></div>
+        <div class="spec"><div class="spec-v">200<span>kg</span></div><div class="spec-l">Load capacity on the aluminium-profile frame</div></div>
+        <div class="spec"><div class="spec-v">120 / 170<span>mm</span></div><div class="spec-l">Two drawer depths — small hand tools and power drills</div></div>
+        <div class="spec" style="border-bottom:0;"><div class="spec-v">1<span>person</span></div><div class="spec-l">Compact and on casters — movable by a single user</div></div>
+      </div>
+    </div>
+    <div style="position:relative;">
+      <div style="border:1px solid var(--line);background:#0b0e14;overflow:hidden;position:relative;">
+        <img src="assets/prototype-hero.png" alt="Smart inventory cabinet prototype" style="display:block;width:100%;height:620px;object-fit:cover;object-position:center;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,11,17,0.55));"></div>
+        <div style="position:absolute;left:18px;bottom:16px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mut);">Fig. 01 — Working prototype · recessed touchscreen · status LED</div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .spec{padding:22px 0;border-bottom:1px solid var(--line2);}
+    .spec-v{font-family:var(--font-display);font-size:40px;font-weight:600;color:var(--ink);letter-spacing:-0.01em;}
+    .spec-v span{font-family:var(--font-mono);font-size:18px;color:var(--accent);margin-left:8px;letter-spacing:0.04em;}
+    .spec-l{font-size:18.5px;color:var(--mut);line-height:1.4;margin-top:8px;max-width:26ch;}
+  </style>
+</section>
+
+<!-- ============ 14 SOFTWARE ============ -->
+<section data-label="Software Stack" data-screen-label="Software Stack">
+  <div class="bg-dots"></div>
+  <div class="bg-grad"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Software Stack</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>16</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:24px;">Software Stack</div>
+    <h2 class="title" style="font-size:52px;margin-bottom:14px;">Local-first, <span class="k">cloud-synced</span></h2>
+    <p class="lead" style="font-size:21px;margin-bottom:44px;max-width:80ch;">The cabinet runs standalone on the Pi and stays in sync with a lightweight cloud backend — chosen for low maintenance and easy future iteration.</p>
+    <div class="sw-table">
+      <div class="sw-head"><span>Layer</span><span>Technology</span><span>Purpose</span><span>Rationale</span></div>
+      <div class="sw-row"><span class="sw-layer mono">EDGE UI</span><span class="sw-tech">NiceGUI</span><span>Touchscreen display on the Pi</span><span class="sw-why">Python-native, runs alongside device logic</span></div>
+      <div class="sw-row"><span class="sw-layer mono">EDGE DB</span><span class="sw-tech">SQLite</span><span>Local database, periodically synced</span><span class="sw-why">Lightweight, works through network drops</span></div>
+      <div class="sw-row"><span class="sw-layer mono">APP</span><span class="sw-tech">Next.js + Vercel</span><span>Web app &amp; API endpoints</span><span class="sw-why">Convenient hosting, easy maintenance</span></div>
+      <div class="sw-row" style="border-bottom:0;"><span class="sw-layer mono">CLOUD</span><span class="sw-tech">Supabase</span><span>PostgreSQL + S3 object storage</span><span class="sw-why">Cheap, managed, simple to extend</span></div>
+    </div>
+    <div class="sw-flow">
+      <div class="swf-group">
+        <div class="swf-label mono">ON THE CABINET · EDGE</div>
+        <div class="swf-boxes"><span class="swf-box">NiceGUI</span><span class="swf-plus">+</span><span class="swf-box">SQLite</span></div>
+      </div>
+      <div class="swf-link"><span class="swf-link-l mono">SYNC</span><svg viewBox="0 0 120 24" fill="none" preserveAspectRatio="none"><path d="M2 8 H110" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="6 6"/><path d="M104 3 L112 8 L104 13" stroke="var(--accent)" stroke-width="1.4"/><path d="M118 16 H10" stroke="rgba(255,255,255,0.25)" stroke-width="1.4" stroke-dasharray="6 6"/><path d="M16 21 L8 16 L16 11" stroke="rgba(255,255,255,0.25)" stroke-width="1.4"/></svg></div>
+      <div class="swf-group">
+        <div class="swf-label mono">IN THE CLOUD · APP &amp; DATA</div>
+        <div class="swf-boxes"><span class="swf-box">Next.js · Vercel</span><span class="swf-plus">+</span><span class="swf-box">Supabase</span></div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .sw-table{border:1px solid var(--line);}
+    .sw-head,.sw-row{display:grid;grid-template-columns:0.7fr 1fr 1.3fr 1.4fr;gap:32px;padding:22px 30px;align-items:center;}
+    .sw-head{font-family:var(--font-mono);font-size:14px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mut2);background:rgba(16,22,31,0.6);border-bottom:1px solid var(--line);}
+    .sw-row{border-bottom:1px solid var(--line2);font-size:20px;color:var(--mut);}
+    .sw-layer{font-size:15px;letter-spacing:0.14em;color:var(--accent);}
+    .sw-tech{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--ink);}
+    .sw-why{font-size:20px;}
+    .sw-flow{margin-top:40px;display:grid;grid-template-columns:1fr auto 1fr;gap:30px;align-items:center;}
+    .swf-group{border:1px solid var(--line);background:rgba(16,22,31,0.45);padding:24px 28px;}
+    .swf-label{font-size:14px;letter-spacing:0.2em;color:var(--mut2);margin-bottom:18px;}
+    .swf-boxes{display:flex;align-items:center;gap:16px;}
+    .swf-box{font-family:var(--font-display);font-size:23px;font-weight:600;color:var(--ink);border:1px solid rgba(39,211,238,0.35);padding:12px 20px;background:rgba(39,211,238,0.05);}
+    .swf-plus{color:var(--mut2);font-size:20px;}
+    .swf-link{display:flex;flex-direction:column;align-items:center;gap:8px;width:140px;}
+    .swf-link-l{font-size:14px;letter-spacing:0.24em;color:var(--accent);}
+    .swf-link svg{width:120px;height:24px;}
+  </style>
+</section>
+
+<!-- ============ 15 UX / USER FLOW ============ -->
+<section data-label="User Experience" data-screen-label="User Experience">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · User Experience</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>17</span></div>
+  <div class="frame" style="padding-top:120px;padding-bottom:96px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px;">
+      <div>
+        <div class="tag" style="margin-bottom:20px;">User Experience</div>
+        <h2 class="title" style="font-size:50px;max-width:24ch;">One account, then it's just tap and go</h2>
+      </div>
+      <span class="mono" style="font-size:16px;letter-spacing:0.12em;color:var(--mut2);border:1px solid var(--line);padding:9px 14px;white-space:nowrap;">BILINGUAL UI · EN / 中文</span>
+    </div>
+    <div class="flow-strip">
+      <div class="fs"><span class="fs-n mono">00</span><span class="fs-t"><b>Set up once</b> — pair a QR to your NFC card</span></div>
+      <div class="fs"><span class="fs-n mono">01</span><span class="fs-t"><b>Browse</b> on phone or cabinet display</span></div>
+      <div class="fs"><span class="fs-n mono">02</span><span class="fs-t"><b>Tap to access</b> — take or return tools</span></div>
+      <div class="fs"><span class="fs-n mono">03</span><span class="fs-t"><b>Checkout summary</b> auto-generated on sync</span></div>
+      <div class="fs"><span class="fs-n mono accent">★</span><span class="fs-t"><b>Admins</b> edit every tool &amp; tag</span></div>
+    </div>
+    <div style="flex:1;display:flex;gap:36px;align-items:stretch;min-height:520px;">
+      <figure class="ui-card" style="flex:0 0 690px;height:560px;">
+        <div class="shot-bar"><i></i><i></i><i></i><span class="shot-url mono">save4223.isd-hub.com</span></div>
+        <img src="assets/ui-dashboard.png" alt="ISDWorks home dashboard" style="width:100%;height:522px;object-fit:cover;object-position:top center;display:block;">
+        <figcaption style="bottom:0;">Home · live counts + every action one tap away</figcaption>
+      </figure>
+      <figure class="ui-card" style="flex:1;height:560px;">
+        <div class="shot-bar"><i></i><i></i><i></i><span class="shot-url mono">save4223.isd-hub.com/library</span></div>
+        <img src="assets/ui-tool-library-v2.png" alt="Tool library — live availability and RFID tags" style="width:100%;height:522px;object-fit:cover;object-position:top center;display:block;">
+        <figcaption style="bottom:0;">Tool library · availability, cabinet location &amp; RFID&nbsp;EPC</figcaption>
+      </figure>
+    </div>
+  </div>
+  <style>
+    .flow-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);margin-bottom:34px;}
+    .fs{display:flex;align-items:baseline;gap:12px;padding:16px 20px;border-right:1px solid var(--line2);}
+    .fs:last-child{border-right:0;}
+    .fs-n{font-size:16px;color:var(--accent);flex:none;letter-spacing:0.06em;}
+    .fs-t{font-size:18px;line-height:1.35;color:var(--mut);}
+    .fs-t b{color:var(--ink);font-weight:600;}
+    .ui-card{position:relative;border:1px solid var(--line);background:#0f1620;overflow:hidden;box-shadow:0 34px 70px -34px rgba(0,0,0,0.85);}
+    .ui-card figcaption{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(8,11,17,0.92));color:var(--mut);font-family:var(--font-mono);font-size:15px;letter-spacing:0.1em;text-transform:uppercase;padding:34px 20px 14px;}
+    .shot-bar{height:38px;background:#0f1620;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative;z-index:2;}
+    .shot-bar i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.18);}
+    .shot-url{position:absolute;left:50%;transform:translateX(-50%);font-size:15px;color:var(--mut2);letter-spacing:0.06em;}
+  </style>
+</section>
+
+<!-- ============ SW WALKTHROUGH ============ -->
+<style>
+  .swfull{position:relative;border:1px solid var(--line);background:#0f1620;overflow:hidden;box-shadow:0 34px 80px -36px rgba(0,0,0,0.9);display:inline-block;line-height:0;}
+  .swfull img{display:block;width:auto;}
+  .sw-stage{flex:1;display:flex;align-items:center;justify-content:center;gap:46px;min-height:0;margin-top:20px;}
+  .sw-col{display:flex;flex-direction:column;align-items:center;gap:22px;}
+  .sw-biglabel{font-family:var(--font-display);font-size:38px;font-weight:600;line-height:1;}
+  .sw-anno{font-size:20px;line-height:1.55;color:var(--mut);}
+  .sw-anno strong{color:var(--ink);font-weight:600;}
+  .sw-pill{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.1em;color:var(--mut);border:1px solid var(--line);padding:8px 13px;}
+  .sw-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent-glow);}
+</style>
+
+<!-- Index Page -->
+<section data-label="Web App · Home" data-screen-label="Web App Home">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Web App</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>18</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:84px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+      <div>
+        <div class="tag" style="margin-bottom:18px;">Web App · Home</div>
+        <h2 class="title" style="font-size:46px;">Index page</h2>
+      </div>
+      <p class="sw-anno" style="max-width:46ch;text-align:right;">After signing in, users land here — live counts up top, then one tap to the tool library, their items, requests, sign-in QR, or profile.</p>
+    </div>
+    <div class="sw-stage">
+      <figure class="swfull"><img src="assets/sw-index.png" alt="ISDWorks home dashboard" style="height:700px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Tool Library -->
+<section data-label="Web App · Tool Library" data-screen-label="Web App Tool Library">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Web App</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>19</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:84px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+      <div>
+        <div class="tag" style="margin-bottom:18px;">Web App · Tool Library</div>
+        <h2 class="title" style="font-size:46px;">Browse what's available</h2>
+      </div>
+      <p class="sw-anno" style="max-width:46ch;text-align:right;">Search and filter by tools, devices or consumables — each item shows live availability, cabinet location and its individual RFID tags.</p>
+    </div>
+    <div class="sw-stage">
+      <figure class="swfull"><img src="assets/sw-tools.png" alt="Tool library page" style="height:700px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Request Permission -->
+<section data-label="Web App · Request Permission" data-screen-label="Web App Request Permission">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Web App</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>20</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:80px;">
+    <div class="tag" style="margin-bottom:18px;">Web App · Restricted Devices</div>
+    <h2 class="title" style="font-size:46px;margin-bottom:10px;">Request permission</h2>
+    <p class="sw-anno" style="max-width:96ch;">Restricted devices — cameras, laptops, precision instruments — need admin approval. Users submit a reason and date range; a future locked cabinet will grant access only to approved borrowers.</p>
+    <div class="sw-stage" style="gap:40px;">
+      <figure class="swfull"><img src="assets/sw-permission-card.png" alt="Restricted device card" style="height:430px;"></figure>
+      <figure class="swfull"><img src="assets/sw-permission-form.png" alt="Request borrow permission form" style="height:560px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- My Items + Report Issue -->
+<section data-label="Web App · My Items" data-screen-label="Web App My Items">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Web App</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>21</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:80px;">
+    <div class="tag" style="margin-bottom:18px;">Web App · My Items</div>
+    <h2 class="title" style="font-size:46px;margin-bottom:10px;">Track borrowings &amp; report issues</h2>
+    <p class="sw-anno" style="max-width:96ch;">Users see what they currently hold with due dates plus recent history — and can flag a problem (mis-read, wrong item, damaged tag, defective tool) straight from the item.</p>
+    <div class="sw-stage" style="gap:44px;">
+      <figure class="swfull"><img src="assets/sw-myitems.png" alt="My items — currently borrowed and history" style="height:600px;"></figure>
+      <figure class="swfull"><img src="assets/sw-report.png" alt="Report issue dialog" style="height:600px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Mobile companion -->
+<section data-label="Web App · Mobile" data-screen-label="Web App Mobile">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Web App</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>22</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:0.82fr 1.18fr;gap:72px;align-items:center;">
+    <div>
+      <div class="tag" style="margin-bottom:22px;">Mobile</div>
+      <h2 class="title" style="font-size:50px;margin-bottom:24px;">On your phone</h2>
+      <p class="sw-anno" style="font-size:22px;margin-bottom:28px;">The same web app works on mobile — so a card isn't even required to get started.</p>
+      <div style="display:flex;flex-direction:column;gap:18px;border-top:1px solid var(--line);padding-top:24px;">
+        <div class="sw-anno"><strong>Pair an NFC card</strong> to your account, then tap-only access at the cabinet.</div>
+        <div class="sw-anno"><strong>Or generate a temporary sign-in QR</strong> and scan it at the cabinet — no card needed.</div>
+      </div>
+    </div>
+    <div class="sw-stage" style="gap:30px;margin-top:0;">
+      <figure class="swfull"><img src="assets/sw-mobile-profile.png" alt="Mobile profile" style="height:660px;"></figure>
+      <figure class="swfull"><img src="assets/sw-mobile-pair.png" alt="Pair NFC card" style="height:660px;"></figure>
+      <figure class="swfull"><img src="assets/sw-mobile-qr.png" alt="Sign-in QR code" style="height:660px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Pi interface — Idle / Access -->
+<section data-label="Cabinet · Pi UI" data-screen-label="Pi UI Access">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Pi NiceGUI Interface</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>23</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:72px;">
+    <div class="tag" style="margin-bottom:18px;">Cabinet · Pi NiceGUI Interface</div>
+    <h2 class="title" style="font-size:46px;margin-bottom:6px;">On-cabinet touchscreen — tap to access</h2>
+    <p class="sw-anno" style="max-width:96ch;">The Raspberry Pi screen greets the user, then confirms identity the moment a card is tapped or a QR is scanned.</p>
+    <div class="sw-stage" style="gap:60px;">
+      <div class="sw-col"><figure class="swfull"><img src="assets/sw-pi-idle.png" alt="Pi idle screen" style="height:440px;"></figure><div class="sw-biglabel">Idle</div></div>
+      <div class="sw-col"><figure class="swfull"><img src="assets/sw-pi-access.png" alt="Pi access granted" style="height:440px;"></figure><div class="sw-biglabel accent">Access granted</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Pi interface — Reminder / Scan -->
+<section data-label="Cabinet · Pi UI" data-screen-label="Pi UI Scan">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Pi NiceGUI Interface</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>24</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:72px;">
+    <div class="tag" style="margin-bottom:18px;">Cabinet · Pi NiceGUI Interface</div>
+    <h2 class="title" style="font-size:46px;margin-bottom:6px;">Close up, then auto-scan inventory</h2>
+    <p class="sw-anno" style="max-width:96ch;">A red LED and on-screen prompt insist every drawer is shut. On close, the cabinet runs an RFID inventory snapshot to log exactly what changed.</p>
+    <div class="sw-stage" style="gap:60px;">
+      <div class="sw-col"><figure class="swfull"><img src="assets/sw-pi-warning.png" alt="Close all drawers reminder" style="height:440px;"></figure><div class="sw-biglabel">Close all drawers</div></div>
+      <div class="sw-col"><figure class="swfull"><img src="assets/sw-pi-scanning.png" alt="Inventory scan in progress" style="height:440px;"></figure><div class="sw-biglabel accent">Inventory scan</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Admin — Manage Tool Types -->
+<section data-label="Admin · Tool Types" data-screen-label="Admin Tool Types">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Admin Dashboard</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>25</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:84px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+      <div>
+        <div class="tag" style="margin-bottom:18px;">Admin Dashboard</div>
+        <h2 class="title" style="font-size:46px;">Manage tools — types &amp; instances</h2>
+      </div>
+      <p class="sw-anno" style="max-width:44ch;text-align:right;">Admins create tool types, set max borrow durations, and drill into every individual tagged instance.</p>
+    </div>
+    <div class="sw-stage">
+      <figure class="swfull"><img src="assets/sw-admin-tooltypes.png" alt="Admin — manage tool types" style="height:700px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Admin — Analytics -->
+<section data-label="Admin · Analytics" data-screen-label="Admin Analytics">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Admin Dashboard</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>26</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:84px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+      <div>
+        <div class="tag" style="margin-bottom:18px;">Admin Dashboard</div>
+        <h2 class="title" style="font-size:46px;">Analytics &amp; low-stock warnings</h2>
+      </div>
+      <p class="sw-anno" style="max-width:44ch;text-align:right;">Availability, borrows-per-month, overdue and damage rates per tool type — plus low-stock alerts at a glance.</p>
+    </div>
+    <div class="sw-stage">
+      <figure class="swfull"><img src="assets/sw-admin-analytics.png" alt="Admin — analytics" style="height:700px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Admin — Missing Items -->
+<section data-label="Admin · Missing Items" data-screen-label="Admin Missing Items">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Architecture · Admin Dashboard</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>27</span></div>
+  <div class="frame" style="padding-top:104px;padding-bottom:84px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+      <div>
+        <div class="tag" style="margin-bottom:18px;">Admin Dashboard</div>
+        <h2 class="title" style="font-size:46px;">Handle reported &amp; missing items</h2>
+      </div>
+      <p class="sw-anno" style="max-width:44ch;text-align:right;">Items the inventory scan can't find are flagged MISSING — admins mark them Found, Write Off, or Delete.</p>
+    </div>
+    <div class="sw-stage">
+      <figure class="swfull"><img src="assets/sw-admin-missing.png" alt="Admin — missing items" style="height:700px;"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16 DIVIDER 04 ============ -->
+<section data-label="04 · Team" data-screen-label="Section 04">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;top:0;right:0;width:1000px;height:1080px;overflow:hidden;">
+    <img src="assets/prototype-hero.png" alt="" style="width:1000px;height:1080px;object-fit:cover;object-position:center;display:block;">
+  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(100deg,var(--bg) 38%,rgba(8,11,17,0.82) 52%,rgba(8,11,17,0.35) 100%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(800px 600px at 82% 50%,rgba(39,211,238,0.16),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Section 04</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>28</span></div>
+  <div style="position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);font-family:var(--font-display);font-weight:600;font-size:420px;line-height:0.8;color:transparent;-webkit-text-stroke:1.4px rgba(255,255,255,0.22);letter-spacing:-0.04em;">04</div>
+  <div class="fade" style="position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);">
+    <div class="tag" style="margin-bottom:30px;">Section 04</div>
+    <h2 class="display">Team<br>&amp; Roadmap</h2>
+    <p class="lead" style="margin-top:30px;">Who built it — and where it goes next.</p>
+  </div>
+</section>
+
+<!-- ============ 17 TEAM ROLES ============ -->
+<section data-label="Team Roles" data-screen-label="Team Roles">
+  <div class="bg-dots"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Team · Roles</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>29</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:24px;">Team &amp; Roles</div>
+    <h2 class="title" style="font-size:54px;margin-bottom:50px;">Four people, one system</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px;">
+      <div class="member"><image-slot id="team-allen" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">HE Tianlun</div><div class="m-alias mono">Allen · HT</div><div class="m-role">Cabinet design lead</div><p class="m-resp">Overall cabinet design — mechanical structure and hardware integration.</p></div>
+      <div class="member"><image-slot id="team-sunny" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">LI Tsz Yuk</div><div class="m-alias mono">Sunny · LT</div><div class="m-role">Hardware &amp; screw cabinet</div><p class="m-resp">Tool-cabinet hardware circuit design; screw-cabinet overall design and UI.</p></div>
+      <div class="member"><image-slot id="team-humor" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">ZHANG Yue</div><div class="m-alias mono">Humor · ZY</div><div class="m-role">Embedded systems</div><p class="m-resp">Embedded software and firmware; screw-cabinet hardware design.</p></div>
+      <div class="member"><image-slot id="team-vicky" class="m-photo" shape="rect" placeholder="Drop photo"></image-slot><div class="m-name">ZHANG Yunxin</div><div class="m-alias mono">Vicky · ZY</div><div class="m-role">Web platform</div><p class="m-resp">End-to-end website UI design and deployment.</p></div>
+    </div>
+    <p class="mono" style="margin-top:32px;font-size:15px;letter-spacing:0.06em;color:var(--mut2);">↳ Drop a photo onto each card to complete the team profiles.</p>
+  </div>
+  <style>
+    .member{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),rgba(16,22,31,0.3));padding:0 0 30px;position:relative;overflow:hidden;}
+    .member::before{content:"";position:absolute;top:0;left:0;width:44px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);z-index:2;}
+    .m-photo{display:block;width:100%;height:260px;margin-bottom:24px;border-bottom:1px solid var(--line);}
+    .m-name{font-family:var(--font-display);font-size:25px;font-weight:600;line-height:1.1;padding:0 26px;}
+    .m-alias{font-size:15.5px;color:var(--mut2);margin-top:5px;letter-spacing:0.06em;padding:0 26px;}
+    .m-role{font-family:var(--font-display);font-size:19px;font-weight:500;color:var(--accent);margin:18px 0 12px;padding:0 26px;}
+    .m-resp{font-size:19px;line-height:1.45;color:var(--mut);padding:0 26px;}
+  </style>
+</section>
+
+<!-- ============ 18 FUTURE WORK ============ -->
+<section data-label="Future Work" data-screen-label="Future Work">
+  <div class="bg-dots"></div>
+  <div class="bg-grad"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Roadmap · Future Work</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>30</span></div>
+  <div class="frame">
+    <div class="tag" style="margin-bottom:24px;">Future Work &amp; Improvements</div>
+    <h2 class="title" style="font-size:50px;margin-bottom:22px;">The finish line — and beyond</h2>
+    <img src="assets/roadmap-timeline-t.png" alt="Roadmap timeline" style="display:block;width:100%;height:150px;object-fit:contain;margin-bottom:24px;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-bottom:26px;">
+      <div class="fw"><div class="fw-top"><span class="fw-t">Prototype refinements</span><span class="fw-wk mono">3 WK</span></div><ul class="fw-l"><li>Door back panels + front-facing LEDs</li><li>Manually editable drawer partitions</li><li>Mobile-optimised UI &amp; faster data fetching</li><li>Public tool library for 4223</li></ul></div>
+      <div class="fw"><div class="fw-top"><span class="fw-t">Reliability testing</span><span class="fw-wk mono">4 WK</span></div><ul class="fw-l"><li>RFID accuracy &amp; read-range testing</li><li>Concurrency — two users at once</li><li>Fault tolerance for network / power loss</li></ul></div>
+      <div class="fw"><div class="fw-top"><span class="fw-t">Documentation</span><span class="fw-wk mono">5 WK</span></div><ul class="fw-l"><li>Administrator manual — tools, tags, users</li><li>Technical maintenance &amp; failback plans</li></ul></div>
+    </div>
+    <div class="fw-major mono">Major upgrades ahead</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;">
+      <div class="fw" style="border-color:rgba(39,211,238,0.4);"><div class="fw-top"><span class="fw-t accent">Verified RF isolation</span><span class="fw-wk mono">01</span></div><ul class="fw-l"><li>Partner with RFID-specialist professors to measure the cabinet's internal field strength with a <strong style="color:var(--ink);">Vector Network Analyzer (VNA)</strong></li></ul></div>
+      <div class="fw" style="border-color:rgba(39,211,238,0.4);"><div class="fw-top"><span class="fw-t accent">Restricted cabinet</span><span class="fw-wk mono">02</span></div><ul class="fw-l"><li>A secondary locked cabinet for high-value devices — <strong style="color:var(--ink);">oscilloscopes, laptops</strong> — requiring manual admin approval before tap-to-unlock</li></ul></div>
+      <div class="fw" style="border-color:rgba(39,211,238,0.4);"><div class="fw-top"><span class="fw-t accent">Automated procurement</span><span class="fw-wk mono">03</span></div><ul class="fw-l"><li>Integrate <strong style="color:var(--ink);">Taobao's MCP</strong> directly into the inventory software to auto-generate materials expense reports</li></ul></div>
+    </div>
+  </div>
+  <style>
+    .fw{border:1px solid var(--line);background:rgba(16,22,31,0.45);padding:24px 26px 26px;}
+    .fw-top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px;}
+    .fw-t{font-family:var(--font-display);font-size:22px;font-weight:600;}
+    .fw-wk{font-size:13.5px;letter-spacing:0.16em;color:var(--accent);border:1px solid var(--line);padding:5px 9px;}
+    .fw-l{list-style:none;display:flex;flex-direction:column;gap:11px;}
+    .fw-l li{font-size:19px;line-height:1.4;color:var(--mut);padding-left:20px;position:relative;}
+    .fw-l li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border:1px solid var(--accent);}
+    .fw-major{font-size:13px;letter-spacing:0.24em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;}
+  </style>
+</section>
+
+<!-- ============ 19 LIVE DEMO ============ -->
+<section data-label="Live Demo" data-screen-label="Live Demo">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(1100px 700px at 30% 50%,rgba(39,211,238,0.16),transparent 62%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <div class="chrome-top"><span class="wm">SAVE<b>4223</b></span><span>Section 05 · Demonstration</span></div>
+  <div class="chrome-bot"><span>RFID Smart Inventory Cabinet</span><span>31</span></div>
+  <div class="frame" style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:80px;align-items:center;">
+    <div>
+      <div class="tag" style="margin-bottom:30px;">Section 05 · Demonstration</div>
+      <h2 class="display" style="font-size:104px;">Live<br>Demo</h2>
+      <div style="display:inline-flex;align-items:center;gap:16px;margin-top:32px;margin-bottom:36px;border:1px solid rgba(39,211,238,0.5);padding:14px 22px;box-shadow:0 0 30px -10px var(--accent-glow);">
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse 1.8s infinite;"></span>
+        <span class="mono" style="font-size:16.5px;letter-spacing:0.16em;color:var(--ink);">≥ 10 MINUTES · LIVE AT THE CABINET</span>
+      </div>
+      <figure style="position:relative;border:1px solid var(--line);background:#0b0e14;overflow:hidden;margin:0;height:300px;">
+        <img src="assets/prototype-angle.png" alt="Cabinet" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(8,11,17,0.7));"></div>
+        <figcaption style="position:absolute;left:18px;bottom:14px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mut);">The real cabinet — try it after the talk</figcaption>
+      </figure>
+    </div>
+    <div>
+      <div class="kicker" style="margin-bottom:22px;">What we'll show →</div>
+      <div class="demo"><span class="demo-n mono">01</span><div><b>Tap to access</b> — NFC card unlocks the permitted drawer</div></div>
+      <div class="demo"><span class="demo-n mono">02</span><div><b>Take &amp; return</b> — UHF re-scan logs the change in real time</div></div>
+      <div class="demo"><span class="demo-n mono">03</span><div><b>Open-drawer alert</b> — LED + UI flag an unclosed drawer</div></div>
+      <div class="demo"><span class="demo-n mono">04</span><div><b>Browse &amp; checkout summary</b> — on phone and on the display</div></div>
+      <div class="demo" style="border-bottom:0;"><span class="demo-n mono">05</span><div><b>Admin view</b> — managing tools, tags and permissions</div></div>
+      <p class="mono" style="margin-top:24px;font-size:15px;letter-spacing:0.05em;color:var(--mut2);">↳ Adjust this running order to match your demo plan.</p>
+    </div>
+  </div>
+  <style>
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    .demo{display:flex;gap:20px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line2);font-size:19px;color:var(--mut);line-height:1.4;}
+    .demo b{color:var(--ink);font-weight:600;}
+    .demo-n{font-size:16px;color:var(--accent);width:30px;flex:none;letter-spacing:0.06em;}
+  </style>
+</section>
+
+<!-- ============ 20 Q&A / THANK YOU ============ -->
+<section data-label="Q&amp;A" data-screen-label="Q and A">
+  <div class="bg-dots"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(1000px 700px at 50% 110%,rgba(39,211,238,0.14),transparent 60%);"></div>
+  <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+  <svg style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);opacity:0.4;" width="640" height="360" viewBox="0 0 640 360" fill="none">
+    <g stroke="var(--accent)" fill="none" stroke-width="1.3">
+      <circle cx="320" cy="180" r="40" opacity="0.7"/>
+      <circle cx="320" cy="180" r="80" opacity="0.4"/>
+      <circle cx="320" cy="180" r="120" opacity="0.25"/>
+      <circle cx="320" cy="180" r="160" opacity="0.14"/>
+    </g>
+    <circle cx="320" cy="180" r="5" fill="var(--accent)"/>
+  </svg>
+  <div class="fade" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+    <div class="tag" style="margin-bottom:34px;justify-content:center;">Thank you</div>
+    <h2 class="display" style="font-size:130px;">Questions?</h2>
+    <p class="lead" style="margin-top:30px;text-align:center;max-width:none;">We'd love your feedback on the cabinet, the system, and what comes next.</p>
+    <div style="margin-top:48px;display:flex;align-items:center;gap:40px;">
+      <span class="mono" style="font-size:16.5px;letter-spacing:0.06em;color:var(--mut);">HE · LI · ZHANG · ZHANG</span>
+      <span style="width:1px;height:22px;background:var(--line);"></span>
+      <span class="mono accent" style="font-size:16.5px;letter-spacing:0.06em;">save4223.isd-hub.com</span>
+    </div>
+  </div>
+  <div style="position:absolute;left:var(--pad);bottom:48px;font-family:var(--font-mono);font-size:13.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--mut2);">SAVE<span class="accent">4223</span> · ISDN 3002</div>
+  <div style="position:absolute;right:var(--pad);bottom:48px;font-family:var(--font-mono);font-size:13.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--mut2);">RFID Smart Inventory Cabinet</div>
+</section>
+
+</deck-stage>
+<script src="image-slot.js"></script>
+<script src="deck-stage.js"></script>
+</body>
+</html>
